@@ -13,3 +13,5 @@ hs_err_pid*
 
 # test files are too big to be uploaded
 test/
+output.txt
+build.xml
