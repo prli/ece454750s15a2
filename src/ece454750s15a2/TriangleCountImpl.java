@@ -11,6 +11,7 @@ package ece454750s15a2;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TriangleCountImpl {
     private byte[] input;
@@ -39,23 +40,27 @@ public class TriangleCountImpl {
     	int numVertices = adjacencyList.size();
     	for (int i = 0; i < numVertices; i++) {
     	    ArrayList<Integer> n1 = adjacencyList.get(i);
+			ConcurrentHashMap<Integer,Integer> hs1 = new ConcurrentHashMap<Integer,Integer> (n1.size());
+			for(int x:n1)
+			{
+				hs1.put(x,1);
+			}
      	    for (int j: n1) {
-     	       if (i > j) {
-     	            continue;
-     	        }
-     	       ArrayList<Integer> n2 = adjacencyList.get(j);
-        		for (int k: n2) {
-        		    if (j > k) {
-        		        continue;
-        		    }
-        		    ArrayList<Integer> n3 = adjacencyList.get(k);
-        		    for (int l: n3) {
-        			//if (i < j && j < k && l == i) {
-        		        if (l==i) {    
-        		            ret.add(new Triangle(i, j, k));
-        		        }
-        		    }
-        		}
+				
+				if (i > j) {
+					continue;
+				}
+				ArrayList<Integer> n2 = adjacencyList.get(j);
+
+				for (int l: n2) {
+					if (j > l) {
+						continue;
+					}
+					if (hs1.containsKey(l)) {    
+						ret.add(new Triangle(i, j, l));
+					}
+				}
+
      	    }
     	}
     
