@@ -23,7 +23,9 @@ public class TriangleCountImpl {
 
     public List<String> getGroupMembers() {
 	ArrayList<String> ret = new ArrayList<String>();
-	ret.add("wgolab");
+	ret.add("prli");
+	ret.add("l22fu");
+	ret.add("p8zhao");
 	return ret;
     }
 
@@ -61,33 +63,33 @@ public class TriangleCountImpl {
     }
 
     public ArrayList<ArrayList<Integer>> getAdjacencyList(byte[] data) throws IOException {
-	InputStream istream = new ByteArrayInputStream(data);
-	BufferedReader br = new BufferedReader(new InputStreamReader(istream));
-	String strLine = br.readLine();
-	if (!strLine.contains("vertices") || !strLine.contains("edges")) {
-	    System.err.println("Invalid graph file format. Offending line: " + strLine);
-	    System.exit(-1);	    
-	}
-	String parts[] = strLine.split(", ");
-	int numVertices = Integer.parseInt(parts[0].split(" ")[0]);
-	int numEdges = Integer.parseInt(parts[1].split(" ")[0]);
-	System.out.println("Found graph with " + numVertices + " vertices and " + numEdges + " edges");
- 
-	ArrayList<ArrayList<Integer>> adjacencyList = new ArrayList<ArrayList<Integer>>(numVertices);
-	for (int i = 0; i < numVertices; i++) {
-	    adjacencyList.add(new ArrayList<Integer>());
-	}
-	while ((strLine = br.readLine()) != null && !strLine.equals(""))   {
-	    parts = strLine.split(": ");
-	    int vertex = Integer.parseInt(parts[0]);
-	    if (parts.length > 1) {
-		parts = parts[1].split(" +");
-		for (String part: parts) {
-		    adjacencyList.get(vertex).add(Integer.parseInt(part));
+		InputStream istream = new ByteArrayInputStream(data);
+		BufferedReader br = new BufferedReader(new InputStreamReader(istream));
+		String strLine = br.readLine();
+		if (!strLine.contains("vertices") || !strLine.contains("edges")) {
+			System.err.println("Invalid graph file format. Offending line: " + strLine);
+			System.exit(-1);	    
 		}
-	    }
-	}
-	br.close();
-	return adjacencyList;
+		String parts[] = strLine.split(", ");
+		int numVertices = Integer.parseInt(parts[0].split(" ")[0]);
+		int numEdges = Integer.parseInt(parts[1].split(" ")[0]);
+		System.out.println("Found graph with " + numVertices + " vertices and " + numEdges + " edges");
+	 
+		ArrayList<ArrayList<Integer>> adjacencyList = new ArrayList<ArrayList<Integer>>(numVertices);
+		for (int i = 0; i < numVertices; i++) {
+			adjacencyList.add(new ArrayList<Integer>());
+		}
+		while ((strLine = br.readLine()) != null && !strLine.equals(""))   {
+			parts = strLine.split(": ");
+			int vertex = Integer.parseInt(parts[0]);
+			if (parts.length > 1) {
+			parts = parts[1].split(" +");
+			for (String part: parts) {
+				adjacencyList.get(vertex).add(Integer.parseInt(part));
+			}
+			}
+		}
+		br.close();
+		return adjacencyList;
     }
 }
