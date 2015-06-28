@@ -41,11 +41,13 @@ public class TriangleCountImpl {
     	for (int i = 0; i < numVertices; i++) {
     	    ArrayList<Integer> n1 = adjacencyList.get(i);
 			ConcurrentHashMap<Integer,Integer> hs1 = new ConcurrentHashMap<Integer,Integer> (n1.size());
-			for(int x:n1)
+			for(int j:n1)
 			{
-				hs1.put(x,1);
+				hs1.put(j,1);
+				ArrayList<Integer> temp = adjacencyList.get(j);
+				temp.remove(new Integer(i));
 			}
-     	    for (int j: n1) {
+     	    for (int j : n1) {
 				
 				if (i > j) {
 					continue;
