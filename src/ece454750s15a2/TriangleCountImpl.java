@@ -92,7 +92,10 @@ public class TriangleCountImpl {
 			if (parts.length > 1) {
 			parts = parts[1].split(" +");
 			for (String part: parts) {
-				adjacencyList.get(vertex).add(Integer.parseInt(part));
+				int neighbour = Integer.parseInt(part);
+				if (neighbour > vertex) {
+					adjacencyList.get(vertex).add(neighbour);
+				}
 			}
 			}
 		}
