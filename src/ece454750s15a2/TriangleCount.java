@@ -61,6 +61,8 @@ public class TriangleCount {
 		// stop the clock
 		long endTime = System.currentTimeMillis();
 
+		System.out.println("Main Counted "+ret.size()+" Triangles");
+		
 		// write triangles to output file
 		FileOutputStream fout = new FileOutputStream(outFileName);
 		PrintWriter pw = new PrintWriter(fout);

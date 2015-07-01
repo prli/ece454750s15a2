@@ -11,43 +11,63 @@ package ece454750s15a2;
 
 import java.io.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TriangleCountImpl {
 	private byte[] data;
 	private int numCores;
 	private int numNodes;
 	private int numEdges;
-
-	public HashSet<Integer>[] adjacencyList;
+	private HashSet<Integer>[] adjacencyList;
+	private HashSet<Triangle> triangles;
 	
 	public TriangleCountImpl(byte[] data, int numCores) throws IOException {
 		this.data = data;
 		this.numCores = numCores;
 		printMemory();
 		adjacencyList = constructList();
-		
-//		for (int i = 0; i < numNodes; i++) {
-//			System.out.println(i+" : "+adjacencyList[i]);
-//		}
+		triangles = new HashSet<Triangle>();
 	}
 
 	public List<String> getGroupMembers() {
 		return Arrays.asList("prli", "l22fu", "p8zhao");
 	}
 
+	public List<Triangle> enumerateTriangles() throws IOException {
+//		for(int i = 1; i <= numCores; i++) {
+//			Thread t = new Thread(new TriangleCountRunnable(i));
+//			t.start();
+//		}
+		
+		for (int x = 0; x < numNodes; x++) {
+			for (Integer y: adjacencyList[x]) {
+
+				if (x > y) {
+					continue;
+				}
+				HashSet<Integer> Yn = adjacencyList[y];
+
+				for (Integer z: Yn) {
+					if (y > z) {
+						continue;
+					}
+					if (adjacencyList[x].contains(z)) {
+						triangles.add(new Triangle(x, y, z));
+					}
+				}
+			}
+		}
+		
+		return new ArrayList<Triangle>(triangles);
+	}
+	
 	private class TriangleCountRunnable implements Runnable {
 
 		int threadId;
-		//List ret;
 		public TriangleCountRunnable(int threadId) {
 			this.threadId = threadId;
-			//this.adjacencyList = Collections.synchronizedList(adjacencyList);
-			//this.ret = Collections.synchronizedList(ret);
 		}
 
 		public void run() {
-			int count = 0;
 			for (int x = 0; x < numNodes; x++) {
 				for (Integer y: adjacencyList[x]) {
 
@@ -60,58 +80,17 @@ public class TriangleCountImpl {
 						if (y > z) {
 							continue;
 						}
-						if (adjacencyList[x].contains(z)) {    
-							//ret.add(new Triangle(i, j, l));
-							//System.out.println("Thread " +  threadId + " adding...");
-							count++;
+						if (adjacencyList[x].contains(z)) {
+							triangles.add(new Triangle(x, y, z));
 						}
 					}
 				}
 			}
-			System.out.println("Counted "+count+" Triangles");
 		}
 	}
 	
-	
-	public List<Triangle> enumerateTriangles() throws IOException {
-		
-//		int count = 0;
-//		HashSet<Integer> neighbors;
-//		HashSet<Integer> neighborsNeighbors;
-//		HashSet<Integer> visited = new HashSet<Integer>();
-//		HashSet<Integer> visitedTemp = new HashSet<Integer>();
-//
-//		for (int node = 0; node < numNodes; node++) {
-//			neighbors = new HashSet<Integer>(adjacencyList[node]);
-//			neighbors.removeAll(visited);
-//			
-//			for(Integer nodeNeighbor : neighbors){
-//				neighborsNeighbors = new HashSet<Integer>(adjacencyList[nodeNeighbor]);
-//				neighborsNeighbors.removeAll(visitedTemp);
-//				neighborsNeighbors.removeAll(visited);
-//				neighborsNeighbors.retainAll(neighbors);
-//				count += neighborsNeighbors.size();
-//				visitedTemp.add(nodeNeighbor);
-//			}
-//			visited.add(node);
-//			visitedTemp.clear();
-//		}
-//		
-//		System.out.println("Counted Triangles " + count);
-		
-		//ArrayList<Triangle> ret = new ArrayList<Triangle>();
-
-		for(int i = 1; i <= numCores; i++)
-		{
-			Thread t = new Thread(new TriangleCountRunnable(i));
-			t.start();
-		}
-
-		return new ArrayList<Triangle>();//ret;
-	}
-
 	@SuppressWarnings("unchecked")
-	public HashSet<Integer>[] constructList() throws IOException {
+	private HashSet<Integer>[] constructList() throws IOException {
 		
 		InputStream istream = new ByteArrayInputStream(data);
 		BufferedReader br = new BufferedReader(new InputStreamReader(istream));
@@ -132,7 +111,6 @@ public class TriangleCountImpl {
 			adjacencyList[i] = new HashSet<Integer>();
 		}
 		
-		
 		for(int i = 0;i < numNodes; i++) {
 			strLine = br.readLine();
 			parts = strLine.split(": ");
@@ -152,8 +130,7 @@ public class TriangleCountImpl {
 		return adjacencyList;
 	}
 	
-	
-	public void printMemory() {
+	private void printMemory() {
 		int mb = 1024*1024;
         
         //Getting the runtime reference from system
