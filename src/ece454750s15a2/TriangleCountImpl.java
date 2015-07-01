@@ -14,84 +14,105 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class TriangleCountImpl {
-    private byte[] input;
-    private int numCores;
+	private byte[] data;
+	private int numCores;
+	private int numNodes;
+	private int numEdges;
 
-    public TriangleCountImpl(byte[] input, int numCores) {
-		this.input = input;
-		this.numCores = numCores;
-    }
-
-    public List<String> getGroupMembers() {
-		ArrayList<String> ret = new ArrayList<String>();
-		ret.add("prli");
-		ret.add("l22fu");
-		ret.add("p8zhao");
-		return ret;
-    }
+	public HashSet<Integer>[] adjacencyList;
 	
+	public TriangleCountImpl(byte[] data, int numCores) throws IOException {
+		this.data = data;
+		this.numCores = numCores;
+		printMemory();
+		adjacencyList = constructList();
+		
+//		for (int i = 0; i < numNodes; i++) {
+//			System.out.println(i+" : "+adjacencyList[i]);
+//		}
+	}
+
+	public List<String> getGroupMembers() {
+		return Arrays.asList("prli", "l22fu", "p8zhao");
+	}
+
 	private class TriangleCountRunnable implements Runnable {
 
 		int threadId;
-		List adjacencyList;
-		List ret;
-		public TriangleCountRunnable(int threadId, ArrayList<ArrayList<Integer>> adjacencyList, ArrayList<Triangle> ret) {
+		//List ret;
+		public TriangleCountRunnable(int threadId) {
 			this.threadId = threadId;
-			this.adjacencyList = Collections.synchronizedList(adjacencyList);
-			this.ret = Collections.synchronizedList(ret);
+			//this.adjacencyList = Collections.synchronizedList(adjacencyList);
+			//this.ret = Collections.synchronizedList(ret);
 		}
-		
+
 		public void run() {
-			int numVertices = adjacencyList.size();
-			System.out.println("numVertices:" +  numVertices + " ...");
-			for (int i = threadId; i < numVertices; i += numCores) {
-				System.out.println("Thread " +  threadId + " running...");
-				ArrayList<Integer> n1 = (ArrayList<Integer>)adjacencyList.get(i);
-				ConcurrentHashMap<Integer,Integer> hs1 = new ConcurrentHashMap<Integer,Integer> (n1.size());
-				System.out.println("node size:" +  n1.size() + " ...");
-				for(int j:n1)
-				{
-					hs1.putIfAbsent(j,1);
-					// ArrayList<Integer> temp = (ArrayList<Integer>) adjacencyList.get(j);
-					// temp.remove(new Integer(i));
-				}
-				
-				for (int j : n1) {
-					
-					if (i > j) {
+			int count = 0;
+			for (int x = 0; x < numNodes; x++) {
+				for (Integer y: adjacencyList[x]) {
+
+					if (x > y) {
 						continue;
 					}
-					ArrayList<Integer> n2 = (ArrayList<Integer>)adjacencyList.get(j);
+					HashSet<Integer> Yn = adjacencyList[y];
 
-					for (int l: n2) {
-						if (j > l) {
+					for (Integer z: Yn) {
+						if (y > z) {
 							continue;
 						}
-						if (hs1.containsKey(l)) {    
-							ret.add(new Triangle(i, j, l));
-							System.out.println("Thread " +  threadId + " adding...");
+						if (adjacencyList[x].contains(z)) {    
+							//ret.add(new Triangle(i, j, l));
+							//System.out.println("Thread " +  threadId + " adding...");
+							count++;
 						}
 					}
 				}
 			}
+			System.out.println("Counted "+count+" Triangles");
 		}
 	}
+	
+	
+	public List<Triangle> enumerateTriangles() throws IOException {
+		
+//		int count = 0;
+//		HashSet<Integer> neighbors;
+//		HashSet<Integer> neighborsNeighbors;
+//		HashSet<Integer> visited = new HashSet<Integer>();
+//		HashSet<Integer> visitedTemp = new HashSet<Integer>();
+//
+//		for (int node = 0; node < numNodes; node++) {
+//			neighbors = new HashSet<Integer>(adjacencyList[node]);
+//			neighbors.removeAll(visited);
+//			
+//			for(Integer nodeNeighbor : neighbors){
+//				neighborsNeighbors = new HashSet<Integer>(adjacencyList[nodeNeighbor]);
+//				neighborsNeighbors.removeAll(visitedTemp);
+//				neighborsNeighbors.removeAll(visited);
+//				neighborsNeighbors.retainAll(neighbors);
+//				count += neighborsNeighbors.size();
+//				visitedTemp.add(nodeNeighbor);
+//			}
+//			visited.add(node);
+//			visitedTemp.clear();
+//		}
+//		
+//		System.out.println("Counted Triangles " + count);
+		
+		//ArrayList<Triangle> ret = new ArrayList<Triangle>();
 
-    public List<Triangle> enumerateTriangles() throws IOException {
-	
-	    ArrayList<ArrayList<Integer>> adjacencyList = getAdjacencyList(input);
-    	ArrayList<Triangle> ret = new ArrayList<Triangle>();
-	
-		for(int i = 0; i < numCores; i++)
+		for(int i = 1; i <= numCores; i++)
 		{
-			Thread t = new Thread(new TriangleCountRunnable(i, adjacencyList, ret));
+			Thread t = new Thread(new TriangleCountRunnable(i));
 			t.start();
 		}
 
-    	return ret;
-    }
+		return new ArrayList<Triangle>();//ret;
+	}
 
-    public ArrayList<ArrayList<Integer>> getAdjacencyList(byte[] data) throws IOException {
+	@SuppressWarnings("unchecked")
+	public HashSet<Integer>[] constructList() throws IOException {
+		
 		InputStream istream = new ByteArrayInputStream(data);
 		BufferedReader br = new BufferedReader(new InputStreamReader(istream));
 		String strLine = br.readLine();
@@ -100,28 +121,58 @@ public class TriangleCountImpl {
 			System.exit(-1);	    
 		}
 		String parts[] = strLine.split(", ");
-		int numVertices = Integer.parseInt(parts[0].split(" ")[0]);
-		int numEdges = Integer.parseInt(parts[1].split(" ")[0]);
-		System.out.println("Found graph with " + numVertices + " vertices and " + numEdges + " edges");
-	 
-		ArrayList<ArrayList<Integer>> adjacencyList = new ArrayList<ArrayList<Integer>>(numVertices);
-		for (int i = 0; i < numVertices; i++) {
-			adjacencyList.add(new ArrayList<Integer>());
+		numNodes = Integer.parseInt(parts[0].split(" ")[0]);
+		numEdges = Integer.parseInt(parts[1].split(" ")[0]);
+		System.out.println("Nodes " + numNodes);
+		System.out.println("Edges " + numEdges);
+		
+		adjacencyList = new HashSet[numNodes];
+		
+		for (int i = 0; i < numNodes; i++) {
+			adjacencyList[i] = new HashSet<Integer>();
 		}
-		while ((strLine = br.readLine()) != null && !strLine.equals(""))   {
+		
+		
+		for(int i = 0;i < numNodes; i++) {
+			strLine = br.readLine();
 			parts = strLine.split(": ");
-			int vertex = Integer.parseInt(parts[0]);
+			int node = Integer.parseInt(parts[0]);
 			if (parts.length > 1) {
-			parts = parts[1].split(" +");
-			for (String part: parts) {
-				int neighbour = Integer.parseInt(part);
-				if (neighbour > vertex) {
-					adjacencyList.get(vertex).add(neighbour);
+				parts = parts[1].split(" +");
+				for (String part: parts) {
+					int neighbour = Integer.parseInt(part);
+					if (neighbour > node) {
+						adjacencyList[node].add(neighbour);
+					}
 				}
 			}
-			}
 		}
+		
 		br.close();
 		return adjacencyList;
-    }
+	}
+	
+	
+	public void printMemory() {
+		int mb = 1024*1024;
+        
+        //Getting the runtime reference from system
+        Runtime runtime = Runtime.getRuntime();
+         
+        System.out.println("##### Heap utilization statistics [MB] #####");
+         
+        //Print used memory
+        System.out.println("Used Memory:"
+            + (runtime.totalMemory() - runtime.freeMemory()) / mb);
+ 
+        //Print free memory
+        System.out.println("Free Memory:"
+            + runtime.freeMemory() / mb);
+         
+        //Print total available memory
+        System.out.println("Total Memory:" + runtime.totalMemory() / mb);
+ 
+        //Print Maximum available memory
+        System.out.println("Max Memory:" + runtime.maxMemory() / mb);
+	}
 }
