@@ -11,6 +11,10 @@ package ece454750s15a2;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class TriangleCountImpl {
 	private byte[] data;
@@ -18,14 +22,14 @@ public class TriangleCountImpl {
 	private int numNodes;
 	private int numEdges;
 	private HashSet<Integer>[] adjacencyList;
-	private HashSet<Triangle> triangles;
+	private ConcurrentHashMap<Triangle, Triangle> triangles;
 	
 	public TriangleCountImpl(byte[] data, int numCores) throws IOException {
 		this.data = data;
 		this.numCores = numCores;
 		printMemory();
 		adjacencyList = constructList();
-		triangles = new HashSet<Triangle>();
+		triangles = new ConcurrentHashMap<Triangle, Triangle>();
 	}
 
 	public List<String> getGroupMembers() {
@@ -33,31 +37,25 @@ public class TriangleCountImpl {
 	}
 
 	public List<Triangle> enumerateTriangles() throws IOException {
-//		for(int i = 1; i <= numCores; i++) {
-//			Thread t = new Thread(new TriangleCountRunnable(i));
-//			t.start();
-//		}
-		
+		ExecutorService executor = Executors.newFixedThreadPool(numCores);
+		int nodeCounter = 0;
 		for (int x = 0; x < numNodes; x++) {
-			for (Integer y: adjacencyList[x]) {
-
-				if (x > y) {
-					continue;
-				}
-				HashSet<Integer> Yn = adjacencyList[y];
-
-				for (Integer z: Yn) {
-					if (y > z) {
-						continue;
-					}
-					if (adjacencyList[x].contains(z)) {
-						triangles.add(new Triangle(x, y, z));
-					}
-				}
-			}
-		}
+            executor.submit(new TriangleCountRunnable(x));
+        }
 		
-		return new ArrayList<Triangle>(triangles);
+        executor.shutdown();
+		
+		try {
+            executor.awaitTermination(60,TimeUnit.SECONDS);
+        } 
+		catch (InterruptedException e) {
+            System.out.println("executor interrupted!");
+            System.exit(1);
+        }
+
+        System.out.println("Number of triangles found: " + triangles.size());
+				
+		return new ArrayList<Triangle>(triangles.values());
 	}
 	
 	private class TriangleCountRunnable implements Runnable {
@@ -68,21 +66,20 @@ public class TriangleCountImpl {
 		}
 
 		public void run() {
-			for (int x = 0; x < numNodes; x++) {
-				for (Integer y: adjacencyList[x]) {
+			HashSet<Integer> Xn = adjacencyList[threadId];
+			for (Integer y: Xn) {
 
-					if (x > y) {
-						continue;
+				if (threadId > y) {
+					return;
+				}
+				
+				HashSet<Integer> Yn = adjacencyList[y];
+				for (Integer z: Yn) {
+					if (y > z) {
+						return;
 					}
-					HashSet<Integer> Yn = adjacencyList[y];
-
-					for (Integer z: Yn) {
-						if (y > z) {
-							continue;
-						}
-						if (adjacencyList[x].contains(z)) {
-							triangles.add(new Triangle(x, y, z));
-						}
+					if (Xn.contains(z)) {
+						triangles.put(new Triangle(threadId, y, z), new Triangle(threadId, y, z));
 					}
 				}
 			}
