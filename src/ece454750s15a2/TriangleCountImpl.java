@@ -21,15 +21,16 @@ public class TriangleCountImpl {
 	private int numCores;
 	private int numNodes;
 	private int numEdges;
+	private HashSet<Integer> threadList;
 	private HashSet<Integer>[] adjacencyList;
-	private ConcurrentHashMap<Triangle, Triangle> triangles;
+	private ConcurrentHashMap<Triangle, Integer> triangles;
 	
 	public TriangleCountImpl(byte[] data, int numCores) throws IOException {
 		this.data = data;
 		this.numCores = numCores;
-		printMemory();
+		threadList = new HashSet<Integer>();
 		adjacencyList = constructList();
-		triangles = new ConcurrentHashMap<Triangle, Triangle>();
+		triangles = new ConcurrentHashMap<Triangle, Integer>();
 	}
 
 	public List<String> getGroupMembers() {
@@ -39,23 +40,23 @@ public class TriangleCountImpl {
 	public List<Triangle> enumerateTriangles() throws IOException {
 		ExecutorService executor = Executors.newFixedThreadPool(numCores);
 		int nodeCounter = 0;
-		for (int x = 0; x < numNodes; x++) {
-            executor.submit(new TriangleCountRunnable(x));
-        }
+		for (Integer node : threadList) {
+			executor.submit(new TriangleCountRunnable(node));
+		}
 		
         executor.shutdown();
 		
 		try {
-            executor.awaitTermination(60,TimeUnit.SECONDS);
+            executor.awaitTermination(120,TimeUnit.SECONDS);
         } 
 		catch (InterruptedException e) {
             System.out.println("executor interrupted!");
-            System.exit(1);
+            System.exit(-1);
         }
 
-        System.out.println("Number of triangles found: " + triangles.size());
+        //System.out.println("Number of triangles found: " + triangles.size());
 				
-		return new ArrayList<Triangle>(triangles.values());
+		return new ArrayList<Triangle>(triangles.keySet());
 	}
 	
 	private class TriangleCountRunnable implements Runnable {
@@ -68,18 +69,9 @@ public class TriangleCountImpl {
 		public void run() {
 			HashSet<Integer> Xn = adjacencyList[threadId];
 			for (Integer y: Xn) {
-
-				if (threadId > y) {
-					return;
-				}
-				
-				HashSet<Integer> Yn = adjacencyList[y];
-				for (Integer z: Yn) {
-					if (y > z) {
-						return;
-					}
+				for (Integer z: adjacencyList[y]) {
 					if (Xn.contains(z)) {
-						triangles.put(new Triangle(threadId, y, z), new Triangle(threadId, y, z));
+						triangles.put(new Triangle(threadId, y, z), 0);
 					}
 				}
 			}
@@ -119,6 +111,9 @@ public class TriangleCountImpl {
 					if (neighbour > node) {
 						adjacencyList[node].add(neighbour);
 					}
+				}
+				if(adjacencyList[node].size() > 0) {
+					threadList.add(node);
 				}
 			}
 		}
