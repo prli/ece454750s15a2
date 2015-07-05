@@ -13,7 +13,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ConcurrentHashMap;
+//import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -24,14 +24,15 @@ public class TriangleCountImpl {
 	private int numEdges;
 	private HashSet<Integer>[] adjacencyList;
 	private ConcurrentLinkedQueue<Integer> threadList;
-	private ConcurrentHashMap<Triangle, Integer> triangles;
+//	private ConcurrentHashMap<Triangle, Integer> triangles;
+	private ConcurrentLinkedQueue<Triangle> triangles;
 	
 	public TriangleCountImpl(byte[] data, int numCores) throws IOException {
 		this.data = data;
 		this.numCores = numCores;
 		threadList = new ConcurrentLinkedQueue<Integer>();
 		constructList();
-		triangles = new ConcurrentHashMap<Triangle, Integer>();
+		triangles = new ConcurrentLinkedQueue<Triangle>();
 	}
 
 	public List<String> getGroupMembers() {
@@ -47,7 +48,8 @@ public class TriangleCountImpl {
 				for (Integer y: Xn) {
 					for (Integer z: adjacencyList[y]) {
 						if (Xn.contains(z)) {
-							triangles.put(new Triangle(x, y, z), 0);
+//							triangles.put(new Triangle(x, y, z), 0);
+							triangles.add(new Triangle(x, y, z));
 						}
 					}
 				}
@@ -73,7 +75,8 @@ public class TriangleCountImpl {
 		}
         System.out.println("Number of triangles found: " + triangles.size());
 				
-		return new ArrayList<Triangle>(triangles.keySet());
+//		return new ArrayList<Triangle>(triangles.keySet());
+		return new ArrayList<Triangle>(triangles);
 	}
 	
 	private class TriangleCountRunnable implements Runnable {
@@ -88,7 +91,8 @@ public class TriangleCountImpl {
 			for (Integer y: Xn) {
 				for (Integer z: adjacencyList[y]) {
 					if (Xn.contains(z)) {
-						triangles.put(new Triangle(threadId, y, z), 0);
+//						triangles.put(new Triangle(threadId, y, z), 0);
+						triangles.add(new Triangle(threadId, y, z));
 					}
 				}
 			}
