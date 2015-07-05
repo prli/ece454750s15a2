@@ -39,22 +39,38 @@ public class TriangleCountImpl {
 	}
 
 	public List<Triangle> enumerateTriangles() throws IOException {
-		ExecutorService executor = Executors.newFixedThreadPool(numCores);
-		
-		for (Integer node : threadList) {
-			executor.submit(new TriangleCountRunnable(node));
+		if(numCores == 1)
+		{
+			for(Integer x : threadList)
+			{
+				HashSet<Integer> Xn = adjacencyList[x];
+				for (Integer y: Xn) {
+					for (Integer z: adjacencyList[y]) {
+						if (Xn.contains(z)) {
+							triangles.put(new Triangle(x, y, z), 0);
+						}
+					}
+				}
+			}
 		}
-		
-        executor.shutdown();
-		
-		try {
-            executor.awaitTermination(120,TimeUnit.SECONDS);
-        } 
-		catch (InterruptedException e) {
-            System.out.println("executor interrupted!");
-            System.exit(-1);
-        }
-
+		else
+		{
+			ExecutorService executor = Executors.newFixedThreadPool(numCores);
+			
+			for (Integer node : threadList) {
+				executor.submit(new TriangleCountRunnable(node));
+			}
+			
+			executor.shutdown();
+			
+			try {
+				executor.awaitTermination(120,TimeUnit.SECONDS);
+			} 
+			catch (InterruptedException e) {
+				System.out.println("executor interrupted!");
+				System.exit(-1);
+			}
+		}
         System.out.println("Number of triangles found: " + triangles.size());
 				
 		return new ArrayList<Triangle>(triangles.keySet());
