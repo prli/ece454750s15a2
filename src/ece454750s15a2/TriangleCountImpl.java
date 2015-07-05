@@ -15,25 +15,21 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class TriangleCountImpl {
 	private byte[] data;
 	private int numCores;
 	private int numNodes;
 	private int numEdges;
-//	private HashSet<Integer> threadList;
 	private HashSet<Integer>[] adjacencyList;
-	private CopyOnWriteArrayList<Integer> threadList;
-//	private CopyOnWriteArrayList< HashSet<Integer> > adjacencyList;
+	private ConcurrentLinkedQueue<Integer> threadList;
 	private ConcurrentHashMap<Triangle, Integer> triangles;
 	
 	public TriangleCountImpl(byte[] data, int numCores) throws IOException {
 		this.data = data;
 		this.numCores = numCores;
-//		threadList = new HashSet<Integer>();
-		threadList = new CopyOnWriteArrayList<Integer>();
-//		adjacencyList = constructList();
+		threadList = new ConcurrentLinkedQueue<Integer>();
 		constructList();
 		triangles = new ConcurrentHashMap<Triangle, Integer>();
 	}
@@ -44,7 +40,7 @@ public class TriangleCountImpl {
 
 	public List<Triangle> enumerateTriangles() throws IOException {
 		ExecutorService executor = Executors.newFixedThreadPool(numCores);
-		//int nodeCounter = 0;
+		
 		for (Integer node : threadList) {
 			executor.submit(new TriangleCountRunnable(node));
 		}
@@ -73,10 +69,8 @@ public class TriangleCountImpl {
 
 		public void run() {
 			HashSet<Integer> Xn = adjacencyList[threadId];
-//			HashSet<Integer> Xn = adjacencyList.get(threadId);
 			for (Integer y: Xn) {
 				for (Integer z: adjacencyList[y]) {
-//				for (Integer z: adjacencyList.get(y)) {
 					if (Xn.contains(z)) {
 						triangles.put(new Triangle(threadId, y, z), 0);
 					}
@@ -87,7 +81,6 @@ public class TriangleCountImpl {
 
 	public void constructList() throws IOException {
 		ExecutorService executor = Executors.newFixedThreadPool(numCores);
-		//int nodeCounter = 0;
 
 		InputStream istream = new ByteArrayInputStream(data);
 		BufferedReader br = new BufferedReader(new InputStreamReader(istream));
@@ -103,11 +96,9 @@ public class TriangleCountImpl {
 		System.out.println("Edges " + numEdges);
 		
 		adjacencyList = new HashSet[numNodes];
-//		adjacencyList = new CopyOnWriteArrayList< HashSet<Integer> >();
 		
 		for (int i = 0; i < numNodes; i++) {
 			adjacencyList[i] = new HashSet<Integer>();
-//			adjacencyList.add( new HashSet<Integer>() );
 		}
 
 		for (int i = 0; i < numNodes; i++) {
@@ -131,7 +122,6 @@ public class TriangleCountImpl {
 	}
 	
 	@SuppressWarnings("unchecked")
-//	private HashSet<Integer>[] constructList() throws IOException {
 	private class ConstructListRunnable implements Runnable {
 
 		String line;
@@ -149,16 +139,13 @@ public class TriangleCountImpl {
 					int neighbour = Integer.parseInt(part);
 					if (neighbour > node) {
 						adjacencyList[node].add(neighbour);
-//						adjacencyList.get(node).add(neighbour);
 					}
 				}
 				if(adjacencyList[node].size() > 0) {
-//				if(adjacencyList.get(node).size() > 0) {
 					threadList.add(node);
 				}
 			}
 		
-		//return adjacencyList;
 		}
 	}
 	
