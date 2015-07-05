@@ -96,7 +96,6 @@ public class TriangleCountImpl {
 	}
 
 	public void constructList() throws IOException {
-		ExecutorService executor = Executors.newFixedThreadPool(numCores);
 
 		InputStream istream = new ByteArrayInputStream(data);
 		BufferedReader br = new BufferedReader(new InputStreamReader(istream));
@@ -117,22 +116,47 @@ public class TriangleCountImpl {
 			adjacencyList[i] = new HashSet<Integer>();
 		}
 
-		for (int i = 0; i < numNodes; i++) {
+		if (numCores == 1) {
+			for (int i=0; i < numNodes; i++) {
+				String line = br.readLine();
+				parts = line.split(": ");
+    			int node = Integer.parseInt(parts[0]);
+    			if (parts.length > 1) {
+    				parts = parts[1].split(" +");
+    				for (String part: parts) {
+    					int neighbour = Integer.parseInt(part);
+    					if (neighbour > node) {
+    						adjacencyList[node].add(neighbour);
+    					}
+    				}
+    				if(adjacencyList[node].size() > 0) {
+    					threadList.add(node);
+    				}
+    			}
+			}
+
+			br.close();
+
+		} else {
+			ExecutorService executor = Executors.newFixedThreadPool(numCores);
+			for (int i = 0; i < numNodes; i++) {
 			
-			strLine = br.readLine();
-			executor.submit(new ConstructListRunnable(strLine));
+				strLine = br.readLine();
+				executor.submit(new ConstructListRunnable(strLine));
+			}
+
+			br.close();
+			executor.shutdown();
+			
+			try {
+				executor.awaitTermination(120,TimeUnit.SECONDS);
+			} 
+			catch (InterruptedException e) {
+				System.out.println("executor interrupted!");
+            	System.exit(-1);
+	        }
+
 		}
-	
-		br.close();
-        executor.shutdown();
-		
-		try {
-            executor.awaitTermination(120,TimeUnit.SECONDS);
-        } 
-		catch (InterruptedException e) {
-            System.out.println("executor interrupted!");
-            System.exit(-1);
-        }
 
         //System.out.println("Number of triangles found: " + triangles.size());
 	}
